@@ -1,0 +1,104 @@
+---
+title: "Homework 5"
+author: "Trevor Caughlin"
+date: "February 12, 2018"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+You will be working with one of the following demographic datasets:
+1. *Rhizoglyphus robini* (mites): https://datadryad.org/resource/doi:10.5061/dryad.df98r
+*Note: this dataset does not include the initial size of new recruits. Assume the lowest 10th percentile of size at time t represents a reasonable guess for initial size values*
+
+2. *Drosophyllum lusitanicum* (sundews):
+https://datadryad.org/resource/doi:10.5061/dryad.rq7t3
+*Note: this dataset does not include the initial size of new recruits. Assume the lowest 10th percentile of size at time t represents a reasonable guess for initial size values*
+
+3. *Poa alsodes* (grass):
+https://datadryad.org/resource/doi:10.5061/dryad.nf515 
+
+4. Guppies:
+https://datadryad.org/resource/doi:10.5061/dryad.mc5m6
+*Note: these data do not include information on survival. All the guppies in the experiment seem to have survived. Make up reasonable values for the survival regression and substitute those values for estimation via glm*
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1:
+Fit models representing growth, survival, reproduction, and initial size for your data set. The predictor variable will be size at time t (except for intial size), and response variables will be size at time t+1 (growth), survival, and number of recruits. For the initial size regression, you will use an intercept-only regression:
+
+```{r intercept only}
+example_data<-rnorm(1000,mean=5,sd=0.1)
+
+#regression with only an intercept
+intercept_only<-glm(example_data~1)
+
+estimated_mean<-coef(intercept_only)[1]
+
+estimated_sd<-sqrt(summary(intercept_only)$dis)
+```
+
+For each of your vital rate regressions, include (a) a plot with a curve overlain on the raw data, (b) a statement for the effect of size on the response variable, and (c) store the estimated values as objects. For an example of (c):
+```{r growth model}
+fish.size<-c(114, 117, 90)
+fish.sizeT2<-c(108, 110, 100)
+
+m1=lm(fish.sizeT2~fish.size)
+
+intercept=coef(m1)[1]
+
+slope=coef(m1)[2]
+
+sd.val=summary(m1)$sigma
+#NOTE if using glm, extract sd using sqrt(summary(intercept_only)$dis)
+```
+
+
+###Question 2: For each vital rate, there is a function that represents the probability density of a size transition. Here are the functions for growth and recruitment:
+
+Note that the input to the functions are size.y (size at time t+1), size.x (size at time t), and parameters from the glms.
+
+```{r vital rate functions}
+
+#growth function
+g_yx<-function(size.y,size.x,intercept,slope,sd.val){
+  
+  growth.prob=dnorm(size.y,mean=intercept+slope*size.x,sd=sd.val)
+  return(growth.prob)
+}
+
+############### function for reproduction (poisson)
+F_yx=function(size.x,size.y,intercept.recruits,sd.recruits,poisson.intercept,poisson.slope) {
+  size.y=dnorm(size.y,mean=intercept.recruits,sd=sd.recruits)
+  recruit.num=exp(poisson.intercept+poisson.slope*size.x)
+  return(size.y*recruit.num)
+}
+```
+
+Fill in the missing line for the survival function:
+
+```{survival function1}
+s_x<-function(size.x,binom.intercept,binom.slope){
+ 
+ #MISSING LINE IS HERE! 
+ 
+  return(pred.survival)
+}
+```
+
+##Question 3: use `source("IPM_calcs.R")` to load scripts that can calculate population growth rate and plot the IPM kernel from your stored functions. Specifically, the function you will be using are:
+
+ipm_kernel=bigmatrix(intercept,slope,sd.val,binom.intercept,binom.slope,intercept.recruits,sd.recruits,poisson.intercept,poisson.slope,L,U)
+
+myimage(ipm_kernel,sp="Species Name:")
+
+Note that in the `bigmatrix` function, the arguments in the function are the stored values from your regression models. `L` is the minimum observed size of your organism, and `U` is the maximum observed size. In the `myimage` function, the arguments are the output of `bigmatrix` and the name of your study species followed by `:`
+
+##Question 4:
+How does your population growth rate differ from the rate in the published paper? Why? (keep this brief:a 1-3 sentence response is expected)
+
+##Question 5: For intial size, replace the normal distribution with a gamma. You will need to run an intercept-only regression with a gamma glm and modify the `Fyx` function.  How does your population growth rate change?
+
+##Question 6: Please describe the biological questions and data you will be using for your individual  project at the end of class. What challenges do you foresee in your analysis?
